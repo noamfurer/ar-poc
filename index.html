@@ -1,136 +1,88 @@
 <!doctype html>
-<html lang="en">
+<html lang="he" dir="rtl">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-  <title>AR.js Hiro Test</title>
+  <meta name="theme-color" content="#000000">
+  <title>MindAR Test</title>
 
-  <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
-  <script src="https://raw.githack.com/AR-js-org/AR.js/3.4.8/aframe/build/aframe-ar.js"></script>
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+
+  <style>
+    html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000;font-family:Arial,Helvetica,sans-serif}
+    #status{
+      position:fixed;z-index:9999;top:max(12px,env(safe-area-inset-top));left:12px;right:12px;
+      padding:12px 14px;border-radius:14px;background:rgba(0,0,0,.72);color:#fff;text-align:center;
+      font-weight:700;font-size:14px;backdrop-filter:blur(8px);pointer-events:none
+    }
+    #status.found{background:rgba(0,130,60,.88)}
+    #hint{
+      position:fixed;z-index:9999;bottom:max(12px,env(safe-area-inset-bottom));left:12px;right:12px;
+      padding:10px 12px;border-radius:12px;background:rgba(0,0,0,.65);color:#fff;text-align:center;
+      font-size:12px;line-height:1.4;pointer-events:none
+    }
+    .mindar-ui-overlay{z-index:9000!important}
+    .a-enter-vr,.a-orientation-modal{display:none!important}
+  </style>
 
   <script>
-    AFRAME.registerComponent('marker-status', {
+    AFRAME.registerComponent('target-status', {
       init: function () {
         const status = document.getElementById('status');
-        this.el.addEventListener('markerFound', () => {
-          status.textContent = 'HIRO FOUND - tracking works!';
+        this.el.addEventListener('targetFound', () => {
+          status.textContent = 'זוהה! ה-AR עובד';
           status.classList.add('found');
         });
-        this.el.addEventListener('markerLost', () => {
-          status.textContent = 'Camera active - point at the full Hiro marker';
+        this.el.addEventListener('targetLost', () => {
+          status.textContent = 'המצלמה פעילה - כוון לתמונת היעד';
           status.classList.remove('found');
         });
       }
     });
   </script>
-
-  <style>
-    html, body {
-      margin: 0;
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background: #000;
-      font-family: Arial, Helvetica, sans-serif;
-    }
-    #status {
-      position: fixed;
-      z-index: 20;
-      top: max(12px, env(safe-area-inset-top));
-      left: 12px;
-      right: 12px;
-      padding: 12px 14px;
-      border-radius: 14px;
-      background: rgba(0,0,0,.72);
-      color: #fff;
-      text-align: center;
-      font-weight: 700;
-      font-size: 14px;
-      pointer-events: none;
-      backdrop-filter: blur(8px);
-    }
-    #status.found {
-      background: rgba(0,130,60,.9);
-    }
-    #help {
-      position: fixed;
-      z-index: 20;
-      left: 12px;
-      right: 12px;
-      bottom: max(12px, env(safe-area-inset-bottom));
-      padding: 10px 12px;
-      border-radius: 12px;
-      background: rgba(0,0,0,.62);
-      color: #fff;
-      font-size: 12px;
-      line-height: 1.4;
-      text-align: center;
-      pointer-events: none;
-    }
-    .a-enter-vr,
-    .a-orientation-modal {
-      display: none !important;
-    }
-  </style>
 </head>
 <body>
-  <div id="status">Starting camera...</div>
-  <div id="help">Do not scan the QR again. After the site opens, point the camera at the entire Hiro marker, including its full black border.</div>
+  <div id="status">מפעיל מצלמה...</div>
+  <div id="hint">פתח את תמונת היעד במחשב/טאבלט אחר וכוון אליה את המצלמה. אין צורך ב-Hiro.</div>
 
   <a-scene
+    mindar-image="imageTargetSrc: https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/examples/image-tracking/assets/card-example/card.mind; uiLoading: no; uiScanning: no; uiError: yes;"
     embedded
+    color-space="sRGB"
+    renderer="colorManagement: true; physicallyCorrectLights: true; alpha: true;"
     vr-mode-ui="enabled: false"
-    renderer="antialias: true; alpha: true"
-    arjs="sourceType: webcam; debugUIEnabled: false;"
+    device-orientation-permission-ui="enabled: false"
   >
-    <a-marker type="pattern" url="./patt.hiro" emitevents="true" marker-status>
+    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+    <a-entity mindar-image-target="targetIndex: 0" target-status>
       <a-box
-        position="0 0.5 0"
-        depth="0.7"
-        height="0.7"
-        width="0.7"
-        material="color: #ff1f1f; opacity: 0.92;"
+        position="0 0.35 0.15"
+        width="0.55"
+        height="0.55"
+        depth="0.55"
+        material="color:#ff2020; metalness:.15; roughness:.5"
+        animation="property: rotation; to: 0 360 0; loop: true; dur: 3500; easing: linear"
       ></a-box>
       <a-sphere
-        position="0 1.15 0"
-        radius="0.22"
-        material="color: #ffffff;"
+        position="0 0.95 0.18"
+        radius="0.18"
+        material="color:#ffffff; metalness:.1; roughness:.4"
       ></a-sphere>
-    </a-marker>
-
-    <a-entity camera></a-entity>
+    </a-entity>
   </a-scene>
 
   <script>
     const status = document.getElementById('status');
+    const scene = document.querySelector('a-scene');
 
-    function updateCameraStatus() {
-      const video =
-        document.querySelector('#arjs-video') ||
-        document.querySelector('video');
+    scene.addEventListener('arReady', () => {
+      status.textContent = 'המצלמה פעילה - כוון לתמונת היעד';
+    });
 
-      if (video && video.readyState >= 2 && video.videoWidth > 0) {
-        if (!status.classList.contains('found')) {
-          status.textContent = 'Camera active - point at the full Hiro marker';
-        }
-        return true;
-      }
-      return false;
-    }
-
-    let attempts = 0;
-    const timer = setInterval(() => {
-      attempts += 1;
-      if (updateCameraStatus() || attempts > 40) {
-        clearInterval(timer);
-        if (attempts > 40 && !updateCameraStatus()) {
-          status.textContent = 'Camera did not initialize correctly';
-        }
-      }
-    }, 250);
-
-    window.addEventListener('camera-error', () => {
-      status.textContent = 'Camera error - check browser camera permission';
+    scene.addEventListener('arError', () => {
+      status.textContent = 'שגיאת AR - רענן את העמוד ונסה שוב';
     });
   </script>
 </body>
