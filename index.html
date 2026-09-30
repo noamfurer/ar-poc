@@ -4,20 +4,30 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
   <meta name="theme-color" content="#000000">
-  <title>היצור האדום - WebAR</title>
+  <title>WebAR - היצור האדום</title>
 
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/dist/mindar-image.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/dist/mindar-image-aframe.prod.js"></script>
 
   <style>
     html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000;font-family:Arial,Helvetica,sans-serif}
-    .example-container{overflow:hidden;position:fixed;inset:0;width:100vw;height:100dvh;background:#000}
-    .example-container a-scene{position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important}
-    .example-container canvas,.example-container .a-canvas{position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important}
-    .example-container video,video.mindar-video{position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;object-fit:cover!important}
-    #status{position:fixed;z-index:99999;top:max(12px,env(safe-area-inset-top));left:12px;right:12px;padding:12px 14px;border-radius:14px;background:rgba(0,0,0,.72);color:#fff;text-align:center;font-weight:700;font-size:14px;backdrop-filter:blur(8px);pointer-events:none}
-    #status.found{background:rgba(168,0,16,.90)}
-    #hint{position:fixed;z-index:99999;bottom:max(12px,env(safe-area-inset-bottom));left:12px;right:12px;padding:10px 12px;border-radius:12px;background:rgba(0,0,0,.65);color:#fff;text-align:center;font-size:12px;line-height:1.4;pointer-events:none}
+    #stage{position:fixed;inset:0;width:100vw;height:100dvh;overflow:hidden;background:#000}
+    #status{
+      position:fixed;z-index:99999;top:max(12px,env(safe-area-inset-top));left:12px;right:12px;
+      padding:12px 14px;border-radius:14px;background:rgba(0,0,0,.72);color:#fff;text-align:center;
+      font-weight:700;font-size:14px;backdrop-filter:blur(8px);pointer-events:none
+    }
+    #status.found{background:rgba(178,0,28,.90)}
+    #hint{
+      position:fixed;z-index:99999;bottom:max(12px,env(safe-area-inset-bottom));left:12px;right:12px;
+      padding:10px 12px;border-radius:12px;background:rgba(0,0,0,.62);color:#fff;text-align:center;
+      font-size:12px;line-height:1.4;pointer-events:none
+    }
+    #stage a-scene,#stage canvas,#stage .a-canvas,#stage video,video.mindar-video{
+      position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important
+    }
+    #stage video,video.mindar-video{object-fit:cover!important}
     .a-enter-vr,.a-orientation-modal{display:none!important}
   </style>
 
@@ -26,190 +36,189 @@
       init: function () {
         const status = document.getElementById('status');
         this.el.addEventListener('targetFound', () => {
-          status.textContent = 'זוהה! היצור האדום יוצא...';
+          status.textContent = 'הלוגו זוהה - הדמות יוצאת מהשולחן';
           status.classList.add('found');
         });
         this.el.addEventListener('targetLost', () => {
-          status.textContent = 'המצלמה פעילה - כוון לתמונת היעד';
+          status.textContent = 'המצלמה פעילה - כוון ללוגו האדום';
           status.classList.remove('found');
         });
       }
     });
 
-    AFRAME.registerComponent('mascot-sequence', {
+    AFRAME.registerComponent('emerge-and-dance', {
       init: function () {
-        this.mixer = null;
-        this.actions = {};
-        this.targetVisible = false;
         this.ready = false;
-        this.finishHandler = null;
-
+        this.targetVisible = false;
+        this.rising = false;
         const target = this.el.parentEl;
+
+        const reset = () => {
+          this.el.removeAttribute('animation__rise');
+          this.el.removeAttribute('animation__grow');
+          this.el.removeAttribute('animation__dancez');
+          this.el.removeAttribute('animation__dancelean');
+          this.el.setAttribute('position','0 0 -0.62');
+          this.el.setAttribute('rotation','0 0 0');
+          this.el.setAttribute('scale','0.24 0.24 0.24');
+          this.el.object3D.visible = false;
+          this.rising = false;
+        };
+        this.reset = reset;
+
+        this.el.addEventListener('model-loaded', () => {
+          this.ready = true;
+          reset();
+          if (this.targetVisible) this.start();
+        });
 
         target.addEventListener('targetFound', () => {
           this.targetVisible = true;
-          if (this.ready) this.playEntrance();
+          if (this.ready) this.start();
         });
 
         target.addEventListener('targetLost', () => {
           this.targetVisible = false;
-          this.resetMascot();
+          reset();
         });
 
-        this.el.addEventListener('model-loaded', (event) => {
-          this.model = event.detail.model;
-          this.root = this.model.getObjectByName('mascot_root');
-          this.sign = this.model.getObjectByName('sign_rig');
-
-          const clips = this.model.animations || [];
-          this.mixer = new THREE.AnimationMixer(this.model);
-
-          clips.forEach((clip) => {
-            this.actions[clip.name] = this.mixer.clipAction(clip);
-          });
-
-          if (this.root) {
-            this.initialRootPosition = this.root.position.clone();
-            this.initialRootQuaternion = this.root.quaternion.clone();
-          }
-          if (this.sign) {
-            this.initialSignPosition = this.sign.position.clone();
-            this.initialSignQuaternion = this.sign.quaternion.clone();
-          }
-
-          this.ready = true;
-          if (this.targetVisible) this.playEntrance();
-        });
-      },
-
-      resetMascot: function () {
-        if (!this.ready) return;
-        if (this.finishHandler && this.mixer) {
-          this.mixer.removeEventListener('finished', this.finishHandler);
-          this.finishHandler = null;
-        }
-        if (this.mixer) this.mixer.stopAllAction();
-
-        if (this.root && this.initialRootPosition && this.initialRootQuaternion) {
-          this.root.position.copy(this.initialRootPosition);
-          this.root.quaternion.copy(this.initialRootQuaternion);
-        }
-        if (this.sign && this.initialSignPosition && this.initialSignQuaternion) {
-          this.sign.position.copy(this.initialSignPosition);
-          this.sign.quaternion.copy(this.initialSignQuaternion);
-        }
-      },
-
-      playEntrance: function () {
-        if (!this.actions.Entrance || !this.actions.Dance || !this.mixer) return;
-
-        this.resetMascot();
-
-        const entrance = this.actions.Entrance;
-        const dance = this.actions.Dance;
-
-        entrance.reset();
-        entrance.enabled = true;
-        entrance.clampWhenFinished = true;
-        entrance.setLoop(THREE.LoopOnce, 1);
-        entrance.play();
-
-        this.finishHandler = (event) => {
-          if (event.action !== entrance) return;
-          this.mixer.removeEventListener('finished', this.finishHandler);
-          this.finishHandler = null;
+        this.el.addEventListener('animationcomplete__rise', () => {
           if (!this.targetVisible) return;
-
-          entrance.stop();
-
-          if (this.root) {
-            this.root.position.set(0, 0.02, 0.20);
-            this.root.quaternion.set(0, 0, 0, 1);
-          }
-          if (this.sign) {
-            this.sign.position.set(0, 1.10, 0.42);
-            this.sign.quaternion.set(0, 0, 0, 1);
-          }
-
-          dance.reset();
-          dance.enabled = true;
-          dance.setLoop(THREE.LoopRepeat, Infinity);
-          dance.play();
-
-          const status = document.getElementById('status');
-          status.textContent = 'היצור האדום רוקד!';
-        };
-
-        this.mixer.addEventListener('finished', this.finishHandler);
+          this.rising = false;
+          this.el.setAttribute('animation__dancez',{
+            property:'position',
+            from:'0 0 0.145',
+            to:'0 0 0.205',
+            dur:430,
+            dir:'alternate',
+            loop:true,
+            easing:'easeInOutSine'
+          });
+          this.el.setAttribute('animation__dancelean',{
+            property:'rotation',
+            from:'-4 3 -7',
+            to:'4 -3 7',
+            dur:430,
+            dir:'alternate',
+            loop:true,
+            easing:'easeInOutSine'
+          });
+          document.getElementById('status').textContent='הדמות בחוץ - ורוקדת!';
+        });
       },
 
-      tick: function (time, delta) {
-        if (this.mixer && this.targetVisible) this.mixer.update(delta / 1000);
+      start: function () {
+        if (this.rising) return;
+        this.reset();
+        this.rising = true;
+        this.el.object3D.visible = true;
+        this.el.setAttribute('animation__rise',{
+          property:'position',
+          from:'0 0 -0.62',
+          to:'0 0 0.145',
+          dur:1650,
+          easing:'easeOutBack'
+        });
+        this.el.setAttribute('animation__grow',{
+          property:'scale',
+          from:'0.21 0.21 0.21',
+          to:'0.24 0.24 0.24',
+          dur:1400,
+          easing:'easeOutCubic'
+        });
       }
     });
   </script>
 </head>
 <body>
-  <div class="example-container">
-    <a-scene
-      mindar-image="imageTargetSrc: https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/image-tracking/assets/card-example/card.mind; uiLoading: yes; uiScanning: yes; uiError: yes;"
-      embedded
-      color-space="sRGB"
-      renderer="colorManagement: true; physicallyCorrectLights: true;"
-      vr-mode-ui="enabled: false"
-      device-orientation-permission-ui="enabled: false"
-    >
-      <a-assets timeout="20000">
-        <a-asset-item id="redMascot" src="./assets/red_creature_mascot.glb"></a-asset-item>
-      </a-assets>
-
-      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-
-      <a-entity mindar-image-target="targetIndex: 0" target-status>
-        <a-entity
-          id="mascot"
-          gltf-model="#redMascot"
-          position="0 -0.23 0.05"
-          scale="0.42 0.42 0.42"
-          mascot-sequence
-        ></a-entity>
-      </a-entity>
-    </a-scene>
-  </div>
-
-  <div id="status">מפעיל מצלמה...</div>
-  <div id="hint">כוון את המצלמה לתמונת היעד. היצור יציץ, יצא החוצה, ירים שלט ואז יתחיל לרקוד.</div>
+  <div id="stage"></div>
+  <div id="status">מכין את הלוגו לזיהוי...</div>
+  <div id="hint">הלוגו צריך להיות מונח שטוח על השולחן ובמלואו בתוך הפריים.</div>
 
   <script>
-    const scene = document.querySelector('a-scene');
+    const stage = document.getElementById('stage');
     const status = document.getElementById('status');
 
-    scene.addEventListener('arReady', () => {
-      status.textContent = 'המצלמה פעילה - כוון לתמונת היעד';
-    });
-
-    scene.addEventListener('arError', () => {
-      status.textContent = 'שגיאת AR - רענן את הדף ונסה שוב';
-    });
-
-    function forceFullscreenLayers(){
-      document.querySelectorAll('video').forEach(v=>{
-        v.style.position='fixed';
-        v.style.inset='0';
-        v.style.width='100vw';
-        v.style.height='100dvh';
-        v.style.objectFit='cover';
-      });
-      document.querySelectorAll('canvas').forEach(c=>{
-        c.style.position='fixed';
-        c.style.inset='0';
-        c.style.width='100vw';
-        c.style.height='100dvh';
+    function loadImage(src){
+      return new Promise((resolve,reject)=>{
+        const img=new Image();
+        img.onload=()=>resolve(img);
+        img.onerror=reject;
+        img.src=src;
       });
     }
 
-    setInterval(forceFullscreenLayers,500);
-    window.addEventListener('resize',forceFullscreenLayers);
+    function forceFullscreenLayers(){
+      document.querySelectorAll('video').forEach(v=>{
+        v.style.position='fixed'; v.style.inset='0';
+        v.style.width='100vw'; v.style.height='100dvh'; v.style.objectFit='cover';
+      });
+      document.querySelectorAll('canvas').forEach(c=>{
+        c.style.position='fixed'; c.style.inset='0';
+        c.style.width='100vw'; c.style.height='100dvh';
+      });
+    }
+
+    async function boot(){
+      try{
+        const img = await loadImage('./assets/logo_target.svg?v=1');
+        const compiler = new window.MINDAR.IMAGE.Compiler();
+
+        status.textContent='מכין את הלוגו לזיהוי: 0%';
+        await compiler.compileImageTargets([img], p=>{
+          status.textContent='מכין את הלוגו לזיהוי: '+Math.round(p)+'%';
+        });
+
+        const exported = await compiler.exportData();
+        const mindUrl = URL.createObjectURL(new Blob([exported],{type:'application/octet-stream'}));
+
+        stage.innerHTML = `
+          <a-scene
+            mindar-image="imageTargetSrc: ${mindUrl}; uiLoading: yes; uiScanning: yes; uiError: yes;"
+            embedded
+            color-space="sRGB"
+            renderer="colorManagement: true; physicallyCorrectLights: true; alpha: true;"
+            vr-mode-ui="enabled: false"
+            device-orientation-permission-ui="enabled: false"
+          >
+            <a-assets timeout="30000">
+              <a-asset-item id="robotModel" src="./assets/robot_builder_mascot_v3.glb?v=1"></a-asset-item>
+            </a-assets>
+
+            <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+            <a-entity mindar-image-target="targetIndex: 0" target-status>
+              <a-entity
+                id="robot"
+                gltf-model="#robotModel"
+                position="0 0 -0.62"
+                rotation="0 0 0"
+                scale="0.24 0.24 0.24"
+                emerge-and-dance
+              ></a-entity>
+            </a-entity>
+          </a-scene>
+        `;
+
+        const scene = stage.querySelector('a-scene');
+        scene.addEventListener('arReady', ()=>{
+          status.textContent='המצלמה פעילה - כוון ללוגו האדום';
+          forceFullscreenLayers();
+        });
+        scene.addEventListener('arError', ()=>{
+          status.textContent='שגיאת AR - רענן את הדף ונסה שוב';
+        });
+
+        setInterval(forceFullscreenLayers,500);
+        window.addEventListener('resize',forceFullscreenLayers);
+
+      }catch(err){
+        console.error(err);
+        status.textContent='שגיאה בהכנת הלוגו לזיהוי';
+      }
+    }
+
+    boot();
   </script>
 </body>
 </html>
