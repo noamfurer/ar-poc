@@ -1,186 +1,136 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
-  <meta name="theme-color" content="#05070a" />
-  <title>WebAR Character Demo</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+  <title>AR.js Hiro Test</title>
+
   <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
-  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+  <script src="https://raw.githack.com/AR-js-org/AR.js/3.4.8/aframe/build/aframe-ar.js"></script>
+
+  <script>
+    AFRAME.registerComponent('marker-status', {
+      init: function () {
+        const status = document.getElementById('status');
+        this.el.addEventListener('markerFound', () => {
+          status.textContent = 'HIRO FOUND - tracking works!';
+          status.classList.add('found');
+        });
+        this.el.addEventListener('markerLost', () => {
+          status.textContent = 'Camera active - point at the full Hiro marker';
+          status.classList.remove('found');
+        });
+      }
+    });
+  </script>
+
   <style>
-    :root { color-scheme: dark; }
-    * { box-sizing: border-box; }
-    html, body { margin:0; width:100%; height:100%; overflow:hidden; background:#05070a; font-family:Arial,Helvetica,sans-serif; }
-    #arRoot { position:fixed; inset:0; width:100vw; height:100dvh; overflow:hidden; background:#000; }
-    #arRoot a-scene, #arRoot .a-canvas { position:fixed !important; inset:0 !important; width:100vw !important; height:100dvh !important; }
-    #arjs-video { position:fixed !important; inset:0 !important; width:100vw !important; height:100dvh !important; object-fit:cover !important; }
-    .overlay { position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center; padding:24px; background:radial-gradient(circle at 50% 35%,rgba(42,183,255,.22),rgba(5,7,10,.97) 52%); }
-    .card { width:min(520px,100%); border:1px solid rgba(255,255,255,.15); border-radius:24px; padding:24px; background:rgba(8,13,20,.92); box-shadow:0 24px 80px rgba(0,0,0,.45); }
-    .eyebrow { font-size:12px; letter-spacing:.18em; text-transform:uppercase; opacity:.65; }
-    h1 { font-size:30px; line-height:1.04; margin:10px 0 12px; }
-    p { color:rgba(255,255,255,.75); line-height:1.5; margin:0 0 20px; }
-    button, a.button { width:100%; border:0; border-radius:16px; padding:16px 18px; font-size:17px; font-weight:700; background:#fff; color:#05070a; text-decoration:none; display:block; text-align:center; }
-    .secondary { margin-top:10px; background:rgba(255,255,255,.08) !important; color:#fff !important; border:1px solid rgba(255,255,255,.12) !important; }
-    .hint { margin-top:14px; font-size:12px; opacity:.52; }
-    #hud { position:fixed; z-index:40; inset:0; pointer-events:none; display:none; }
-    #status { position:absolute; left:14px; right:14px; top:max(14px,env(safe-area-inset-top)); text-align:center; font-size:14px; font-weight:700; padding:11px 14px; border-radius:999px; background:rgba(5,7,10,.72); border:1px solid rgba(255,255,255,.14); backdrop-filter:blur(12px); }
-    #playWrap { position:absolute; left:14px; right:14px; bottom:max(18px,env(safe-area-inset-bottom)); pointer-events:auto; display:none; }
-    #errorBox { display:none; margin-top:12px; color:#ffb4b4; font-size:13px; line-height:1.45; }
-    .a-enter-vr, .a-orientation-modal { display:none !important; }
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    #status {
+      position: fixed;
+      z-index: 20;
+      top: max(12px, env(safe-area-inset-top));
+      left: 12px;
+      right: 12px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(0,0,0,.72);
+      color: #fff;
+      text-align: center;
+      font-weight: 700;
+      font-size: 14px;
+      pointer-events: none;
+      backdrop-filter: blur(8px);
+    }
+    #status.found {
+      background: rgba(0,130,60,.9);
+    }
+    #help {
+      position: fixed;
+      z-index: 20;
+      left: 12px;
+      right: 12px;
+      bottom: max(12px, env(safe-area-inset-bottom));
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(0,0,0,.62);
+      color: #fff;
+      font-size: 12px;
+      line-height: 1.4;
+      text-align: center;
+      pointer-events: none;
+    }
+    .a-enter-vr,
+    .a-orientation-modal {
+      display: none !important;
+    }
   </style>
 </head>
 <body>
-  <div id="arRoot"></div>
+  <div id="status">Starting camera...</div>
+  <div id="help">Do not scan the QR again. After the site opens, point the camera at the entire Hiro marker, including its full black border.</div>
 
-  <div id="intro" class="overlay">
-    <div class="card">
-      <div class="eyebrow">WebAR proof of concept</div>
-      <h1>A 3D character on your table</h1>
-      <p>Tap Open camera, allow camera access, then point the phone at the Hiro marker.</p>
-      <button id="enterBtn">Open camera</button>
-      <a class="button secondary" href="marker.html" target="_blank" rel="noopener">Open printable marker</a>
-      <div id="errorBox"></div>
-      <div class="hint">For best results, open this page directly in Safari on iPhone or Chrome on Android, not inside an in-app browser.</div>
-    </div>
-  </div>
+  <a-scene
+    embedded
+    vr-mode-ui="enabled: false"
+    renderer="antialias: true; alpha: true"
+    arjs="sourceType: webcam; debugUIEnabled: false;"
+  >
+    <a-marker preset="hiro" emitevents="true" marker-status>
+      <a-box
+        position="0 0.5 0"
+        depth="0.7"
+        height="0.7"
+        width="0.7"
+        material="color: #ff1f1f; opacity: 0.92;"
+      ></a-box>
+      <a-sphere
+        position="0 1.15 0"
+        radius="0.22"
+        material="color: #ffffff;"
+      ></a-sphere>
+    </a-marker>
 
-  <div id="hud">
-    <div id="status">Starting camera...</div>
-    <div id="playWrap"><button id="playDemo">Play demo</button></div>
-  </div>
+    <a-entity camera></a-entity>
+  </a-scene>
 
   <script>
-    const arRoot = document.getElementById('arRoot');
-    const intro = document.getElementById('intro');
-    const hud = document.getElementById('hud');
-    const statusEl = document.getElementById('status');
-    const playWrap = document.getElementById('playWrap');
-    const errorBox = document.getElementById('errorBox');
-    const enterBtn = document.getElementById('enterBtn');
-    const playDemo = document.getElementById('playDemo');
-    let markerVisible = false;
-    let mouthTimer = null;
-    let armTimer = null;
+    const status = document.getElementById('status');
 
-    function showError(message) {
-      errorBox.style.display = 'block';
-      errorBox.textContent = message;
-      intro.style.display = 'flex';
-      hud.style.display = 'none';
-      enterBtn.disabled = false;
-      enterBtn.textContent = 'Try camera again';
-    }
+    function updateCameraStatus() {
+      const video =
+        document.querySelector('#arjs-video') ||
+        document.querySelector('video');
 
-    function startTalkingAnimation() {
-      const mouth = document.getElementById('mouth');
-      const arm = document.getElementById('rightArm');
-      if (!mouth || !arm) return;
-      stopTalkingAnimation();
-      let open = false;
-      mouthTimer = setInterval(() => {
-        open = !open;
-        mouth.setAttribute('height', open ? '0.055' : '0.018');
-        mouth.setAttribute('position', open ? '0 0.875 0.218' : '0 0.89 0.218');
-      }, 120);
-      let wave = false;
-      armTimer = setInterval(() => {
-        wave = !wave;
-        arm.setAttribute('rotation', wave ? '0 0 -72' : '0 0 -34');
-      }, 420);
-    }
-
-    function stopTalkingAnimation() {
-      if (mouthTimer) clearInterval(mouthTimer);
-      if (armTimer) clearInterval(armTimer);
-      mouthTimer = armTimer = null;
-      const mouth = document.getElementById('mouth');
-      const arm = document.getElementById('rightArm');
-      if (mouth) { mouth.setAttribute('height','0.018'); mouth.setAttribute('position','0 0.89 0.218'); }
-      if (arm) arm.setAttribute('rotation','0 0 -34');
-    }
-
-    function bindMarkerEvents() {
-      const marker = document.getElementById('hiroMarker');
-      if (!marker) return;
-      marker.addEventListener('markerFound', () => {
-        markerVisible = true;
-        statusEl.textContent = 'Marker found - move around the character';
-        playWrap.style.display = 'block';
-      });
-      marker.addEventListener('markerLost', () => {
-        markerVisible = false;
-        statusEl.textContent = 'Point the camera at the Hiro marker';
-        playWrap.style.display = 'none';
-      });
-    }
-
-    function mountARScene() {
-      arRoot.innerHTML = `
-        <a-scene
-          embedded
-          vr-mode-ui="enabled: false"
-          device-orientation-permission-ui="enabled: false"
-          renderer="antialias: true; alpha: true; precision: medium"
-          arjs="sourceType: webcam; videoTexture: true; debugUIEnabled: false; trackingMethod: best;"
-        >
-          <a-marker id="hiroMarker" preset="hiro" emitevents="true" smooth="true" smooth-count="5" smooth-tolerance="0.01" smooth-threshold="2">
-            <a-entity position="0 0 0">
-              <a-cylinder position="-0.25 0.025 0" radius="0.29" height="0.035" material="color:#000; opacity:.28; transparent:true"></a-cylinder>
-              <a-entity id="character" position="-0.25 0.05 0" scale="0.72 0.72 0.72">
-                <a-cylinder position="0 0.48 0" radius="0.18" height="0.62" material="color:#0d8cff"></a-cylinder>
-                <a-sphere position="0 0.93 0" radius="0.225" material="color:#ffd4b8"></a-sphere>
-                <a-sphere position="-0.075 0.975 0.205" radius="0.025" material="color:#121820"></a-sphere>
-                <a-sphere position="0.075 0.975 0.205" radius="0.025" material="color:#121820"></a-sphere>
-                <a-box id="mouth" position="0 0.89 0.218" width="0.085" height="0.018" depth="0.012" material="color:#5c2432"></a-box>
-                <a-cylinder position="-0.23 0.48 0" radius="0.045" height="0.52" rotation="0 0 -12" material="color:#ffd4b8"></a-cylinder>
-                <a-entity id="rightArm" position="0.20 0.68 0" rotation="0 0 -34"><a-cylinder position="0 -0.20 0" radius="0.045" height="0.48" material="color:#ffd4b8"></a-cylinder></a-entity>
-                <a-cylinder position="-0.09 0.08 0" radius="0.055" height="0.34" material="color:#18202a"></a-cylinder>
-                <a-cylinder position="0.09 0.08 0" radius="0.055" height="0.34" material="color:#18202a"></a-cylinder>
-              </a-entity>
-              <a-entity position="0.46 0.62 -0.02" rotation="-8 -8 0" scale="0.58 0.58 0.58">
-                <a-box width="1.12" height="0.69" depth="0.045" material="color:#101820"></a-box>
-                <a-plane position="0 0 0.026" width="1.02" height="0.574" material="color:#24b6ff; shader:flat"></a-plane>
-              </a-entity>
-            </a-entity>
-          </a-marker>
-          <a-entity camera></a-entity>
-        </a-scene>`;
-      bindMarkerEvents();
-    }
-
-    window.addEventListener('camera-init', () => {
-      statusEl.textContent = 'Camera ready - point at the Hiro marker';
-    });
-
-    window.addEventListener('camera-error', (event) => {
-      console.error('AR camera error', event.detail || event);
-      showError('Camera could not stay open. Please open this link directly in Safari or Chrome and allow camera access.');
-    });
-
-    enterBtn.addEventListener('click', () => {
-      enterBtn.disabled = true;
-      errorBox.style.display = 'none';
-      intro.style.display = 'none';
-      hud.style.display = 'block';
-      statusEl.textContent = 'Starting camera...';
-      if (!arRoot.querySelector('a-scene')) mountARScene();
-    });
-
-    playDemo.addEventListener('click', () => {
-      if (!markerVisible) return;
-      const line = 'Welcome to the Web AR demo. I am standing on your table. Move your phone closer, farther away, or around me.';
-      playDemo.disabled = true;
-      startTalkingAnimation();
-      if ('speechSynthesis' in window) {
-        speechSynthesis.cancel();
-        const u = new SpeechSynthesisUtterance(line);
-        u.rate = .94;
-        u.onend = () => { stopTalkingAnimation(); playDemo.disabled = false; };
-        u.onerror = () => { stopTalkingAnimation(); playDemo.disabled = false; };
-        speechSynthesis.speak(u);
-      } else {
-        setTimeout(() => { stopTalkingAnimation(); playDemo.disabled = false; }, 7000);
+      if (video && video.readyState >= 2 && video.videoWidth > 0) {
+        if (!status.classList.contains('found')) {
+          status.textContent = 'Camera active - point at the full Hiro marker';
+        }
+        return true;
       }
+      return false;
+    }
+
+    let attempts = 0;
+    const timer = setInterval(() => {
+      attempts += 1;
+      if (updateCameraStatus() || attempts > 40) {
+        clearInterval(timer);
+        if (attempts > 40 && !updateCameraStatus()) {
+          status.textContent = 'Camera did not initialize correctly';
+        }
+      }
+    }, 250);
+
+    window.addEventListener('camera-error', () => {
+      status.textContent = 'Camera error - check browser camera permission';
     });
   </script>
 </body>
