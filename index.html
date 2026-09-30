@@ -6,121 +6,75 @@
   <meta name="theme-color" content="#05070a" />
   <title>WebAR Character Demo</title>
   <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
-  <script src="https://raw.githack.com/AR-js-org/AR.js/3.4.8/aframe/build/aframe-ar.js"></script>
+  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
   <style>
     :root { color-scheme: dark; }
     * { box-sizing: border-box; }
-    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #05070a; font-family: Arial, Helvetica, sans-serif; }
-    .overlay { position: fixed; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center; padding: 24px; background: radial-gradient(circle at 50% 35%, rgba(42,183,255,.22), rgba(5,7,10,.94) 52%); }
-    .card { width: min(520px, 100%); border: 1px solid rgba(255,255,255,.15); border-radius: 24px; padding: 24px; background: rgba(8,13,20,.88); backdrop-filter: blur(16px); box-shadow: 0 24px 80px rgba(0,0,0,.45); }
-    .eyebrow { font-size: 12px; letter-spacing: .18em; text-transform: uppercase; opacity: .65; }
-    h1 { font-size: 30px; line-height: 1.04; margin: 10px 0 12px; }
-    p { color: rgba(255,255,255,.75); line-height: 1.5; margin: 0 0 20px; }
-    button, a.button { width: 100%; border: 0; border-radius: 16px; padding: 16px 18px; font-size: 17px; font-weight: 700; background: #fff; color: #05070a; text-decoration: none; display: block; text-align: center; }
-    .secondary { margin-top: 10px; background: rgba(255,255,255,.08) !important; color: #fff !important; border: 1px solid rgba(255,255,255,.12) !important; }
-    .hint { margin-top: 14px; font-size: 12px; opacity: .52; }
-    #hud { position: fixed; z-index: 15; inset: 0; pointer-events: none; display: none; }
-    #status { position: absolute; left: 14px; right: 14px; top: max(14px, env(safe-area-inset-top)); text-align: center; font-size: 14px; font-weight: 700; padding: 11px 14px; border-radius: 999px; background: rgba(5,7,10,.7); border: 1px solid rgba(255,255,255,.14); backdrop-filter: blur(12px); }
-    #playWrap { position: absolute; left: 14px; right: 14px; bottom: max(18px, env(safe-area-inset-bottom)); pointer-events: auto; display: none; }
-    #playDemo { box-shadow: 0 10px 40px rgba(0,0,0,.4); }
-    #markerLink { margin-top: 10px; font-size: 12px; text-align: center; opacity: .7; }
-    #markerLink a { color: #fff; }
-    .a-enter-vr, .a-orientation-modal { display: none !important; }
+    html, body { margin:0; width:100%; height:100%; overflow:hidden; background:#05070a; font-family:Arial,Helvetica,sans-serif; }
+    #arRoot { position:fixed; inset:0; width:100vw; height:100dvh; overflow:hidden; background:#000; }
+    #arRoot a-scene, #arRoot .a-canvas { position:fixed !important; inset:0 !important; width:100vw !important; height:100dvh !important; }
+    #arjs-video { position:fixed !important; inset:0 !important; width:100vw !important; height:100dvh !important; object-fit:cover !important; }
+    .overlay { position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center; padding:24px; background:radial-gradient(circle at 50% 35%,rgba(42,183,255,.22),rgba(5,7,10,.97) 52%); }
+    .card { width:min(520px,100%); border:1px solid rgba(255,255,255,.15); border-radius:24px; padding:24px; background:rgba(8,13,20,.92); box-shadow:0 24px 80px rgba(0,0,0,.45); }
+    .eyebrow { font-size:12px; letter-spacing:.18em; text-transform:uppercase; opacity:.65; }
+    h1 { font-size:30px; line-height:1.04; margin:10px 0 12px; }
+    p { color:rgba(255,255,255,.75); line-height:1.5; margin:0 0 20px; }
+    button, a.button { width:100%; border:0; border-radius:16px; padding:16px 18px; font-size:17px; font-weight:700; background:#fff; color:#05070a; text-decoration:none; display:block; text-align:center; }
+    .secondary { margin-top:10px; background:rgba(255,255,255,.08) !important; color:#fff !important; border:1px solid rgba(255,255,255,.12) !important; }
+    .hint { margin-top:14px; font-size:12px; opacity:.52; }
+    #hud { position:fixed; z-index:40; inset:0; pointer-events:none; display:none; }
+    #status { position:absolute; left:14px; right:14px; top:max(14px,env(safe-area-inset-top)); text-align:center; font-size:14px; font-weight:700; padding:11px 14px; border-radius:999px; background:rgba(5,7,10,.72); border:1px solid rgba(255,255,255,.14); backdrop-filter:blur(12px); }
+    #playWrap { position:absolute; left:14px; right:14px; bottom:max(18px,env(safe-area-inset-bottom)); pointer-events:auto; display:none; }
+    #errorBox { display:none; margin-top:12px; color:#ffb4b4; font-size:13px; line-height:1.45; }
+    .a-enter-vr, .a-orientation-modal { display:none !important; }
   </style>
 </head>
 <body>
+  <div id="arRoot"></div>
+
   <div id="intro" class="overlay">
     <div class="card">
-      <div class="eyebrow">Free WebAR proof of concept</div>
+      <div class="eyebrow">WebAR proof of concept</div>
       <h1>A 3D character on your table</h1>
-      <p>Open the camera, point it at the printed AR marker, then move closer, farther away, or around it. When the character appears, tap Play demo.</p>
+      <p>Tap Open camera, allow camera access, then point the phone at the Hiro marker.</p>
       <button id="enterBtn">Open camera</button>
-      <a class="button secondary" href="marker.html" target="_blank">Open printable marker</a>
-      <div class="hint">Camera permission and HTTPS are required. Best tested in Chrome on Android or Safari on iPhone.</div>
+      <a class="button secondary" href="marker.html" target="_blank" rel="noopener">Open printable marker</a>
+      <div id="errorBox"></div>
+      <div class="hint">For best results, open this page directly in Safari on iPhone or Chrome on Android, not inside an in-app browser.</div>
     </div>
   </div>
 
   <div id="hud">
-    <div id="status">Point the camera at the AR marker</div>
-    <div id="playWrap">
-      <button id="playDemo">Play demo</button>
-      <div id="markerLink"><a href="marker.html" target="_blank">Need the marker?</a></div>
-    </div>
+    <div id="status">Starting camera...</div>
+    <div id="playWrap"><button id="playDemo">Play demo</button></div>
   </div>
 
-  <a-scene
-    embedded
-    vr-mode-ui="enabled: false"
-    renderer="antialias: true; alpha: true; colorManagement: true"
-    arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono; trackingMethod: best;"
-  >
-    <a-assets timeout="15000">
-      <video id="demoVideo" src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" preload="auto" playsinline webkit-playsinline muted loop crossorigin="anonymous"></video>
-    </a-assets>
-
-    <a-marker id="hiroMarker" preset="hiro" emitevents="true" smooth="true" smooth-count="5" smooth-tolerance="0.01" smooth-threshold="2">
-      <a-entity id="experience" position="0 0 0" rotation="0 0 0">
-        <a-cylinder position="-0.25 0.025 0" radius="0.29" height="0.035" material="color: #000; opacity: 0.28; transparent: true"></a-cylinder>
-        <a-entity id="character" position="-0.25 0.05 0" scale="0.72 0.72 0.72">
-          <a-cylinder id="body" position="0 0.48 0" radius="0.18" height="0.62" material="color: #0d8cff; roughness: 0.45; metalness: 0.1"></a-cylinder>
-          <a-sphere position="0 0.93 0" radius="0.225" material="color: #ffd4b8; roughness: 0.75"></a-sphere>
-          <a-sphere position="-0.075 0.975 0.205" radius="0.025" material="color: #121820"></a-sphere>
-          <a-sphere position="0.075 0.975 0.205" radius="0.025" material="color: #121820"></a-sphere>
-          <a-box id="mouth" position="0 0.89 0.218" width="0.085" height="0.018" depth="0.012" material="color: #5c2432"></a-box>
-          <a-cylinder position="-0.23 0.48 0" radius="0.045" height="0.52" rotation="0 0 -12" material="color: #ffd4b8"></a-cylinder>
-          <a-entity id="rightArm" position="0.20 0.68 0" rotation="0 0 -34">
-            <a-cylinder position="0 -0.20 0" radius="0.045" height="0.48" material="color: #ffd4b8"></a-cylinder>
-          </a-entity>
-          <a-cylinder position="-0.09 0.08 0" radius="0.055" height="0.34" material="color: #18202a"></a-cylinder>
-          <a-cylinder position="0.09 0.08 0" radius="0.055" height="0.34" material="color: #18202a"></a-cylinder>
-          <a-ring position="0 0.86 0.218" radius-inner="0.042" radius-outer="0.052" rotation="0 0 0" material="color: #ffffff; opacity: 0.9"></a-ring>
-          <a-entity animation="property: position; dir: alternate; dur: 950; easing: easeInOutSine; loop: true; to: 0 0.018 0"></a-entity>
-        </a-entity>
-        <a-entity id="screenGroup" position="0.46 0.62 -0.02" rotation="-8 -8 0" scale="0.58 0.58 0.58">
-          <a-box position="0 0 0" width="1.12" height="0.69" depth="0.045" material="color: #101820; metalness: 0.55; roughness: 0.25"></a-box>
-          <a-video id="videoPlane" src="#demoVideo" position="0 0 0.026" width="1.02" height="0.574" material="shader: flat"></a-video>
-          <a-box position="0 -0.41 0" width="0.10" height="0.14" depth="0.05" material="color: #101820"></a-box>
-          <a-cylinder position="0 -0.50 0" radius="0.18" height="0.035" material="color: #101820"></a-cylinder>
-        </a-entity>
-        <a-cylinder position="0 0.01 0" radius="0.9" height="0.018" material="color: #52d6ff; opacity: 0.14; transparent: true"></a-cylinder>
-      </a-entity>
-    </a-marker>
-    <a-entity camera></a-entity>
-  </a-scene>
-
   <script>
+    const arRoot = document.getElementById('arRoot');
     const intro = document.getElementById('intro');
     const hud = document.getElementById('hud');
     const statusEl = document.getElementById('status');
     const playWrap = document.getElementById('playWrap');
-    const marker = document.getElementById('hiroMarker');
-    const mouth = document.getElementById('mouth');
-    const rightArm = document.getElementById('rightArm');
-    const demoVideo = document.getElementById('demoVideo');
+    const errorBox = document.getElementById('errorBox');
+    const enterBtn = document.getElementById('enterBtn');
     const playDemo = document.getElementById('playDemo');
     let markerVisible = false;
     let mouthTimer = null;
     let armTimer = null;
 
-    document.getElementById('enterBtn').addEventListener('click', () => {
-      intro.style.display = 'none';
-      hud.style.display = 'block';
-      if ('speechSynthesis' in window) window.speechSynthesis.resume();
-    });
-
-    marker.addEventListener('markerFound', () => {
-      markerVisible = true;
-      statusEl.textContent = 'Marker found - move around the character';
-      playWrap.style.display = 'block';
-    });
-
-    marker.addEventListener('markerLost', () => {
-      markerVisible = false;
-      statusEl.textContent = 'Point the camera at the AR marker';
-      playWrap.style.display = 'none';
-    });
+    function showError(message) {
+      errorBox.style.display = 'block';
+      errorBox.textContent = message;
+      intro.style.display = 'flex';
+      hud.style.display = 'none';
+      enterBtn.disabled = false;
+      enterBtn.textContent = 'Try camera again';
+    }
 
     function startTalkingAnimation() {
+      const mouth = document.getElementById('mouth');
+      const arm = document.getElementById('rightArm');
+      if (!mouth || !arm) return;
       stopTalkingAnimation();
       let open = false;
       mouthTimer = setInterval(() => {
@@ -131,53 +85,101 @@
       let wave = false;
       armTimer = setInterval(() => {
         wave = !wave;
-        rightArm.setAttribute('rotation', wave ? '0 0 -72' : '0 0 -34');
+        arm.setAttribute('rotation', wave ? '0 0 -72' : '0 0 -34');
       }, 420);
     }
 
     function stopTalkingAnimation() {
       if (mouthTimer) clearInterval(mouthTimer);
       if (armTimer) clearInterval(armTimer);
-      mouthTimer = null;
-      armTimer = null;
-      mouth.setAttribute('height', '0.018');
-      mouth.setAttribute('position', '0 0.89 0.218');
-      rightArm.setAttribute('rotation', '0 0 -34');
+      mouthTimer = armTimer = null;
+      const mouth = document.getElementById('mouth');
+      const arm = document.getElementById('rightArm');
+      if (mouth) { mouth.setAttribute('height','0.018'); mouth.setAttribute('position','0 0.89 0.218'); }
+      if (arm) arm.setAttribute('rotation','0 0 -34');
     }
 
-    playDemo.addEventListener('click', async () => {
-      if (!markerVisible) return;
-      playDemo.disabled = true;
-      playDemo.textContent = 'Demo playing...';
-      demoVideo.currentTime = 0;
-      demoVideo.muted = true;
-      try { await demoVideo.play(); } catch (e) { console.warn(e); }
+    function bindMarkerEvents() {
+      const marker = document.getElementById('hiroMarker');
+      if (!marker) return;
+      marker.addEventListener('markerFound', () => {
+        markerVisible = true;
+        statusEl.textContent = 'Marker found - move around the character';
+        playWrap.style.display = 'block';
+      });
+      marker.addEventListener('markerLost', () => {
+        markerVisible = false;
+        statusEl.textContent = 'Point the camera at the Hiro marker';
+        playWrap.style.display = 'none';
+      });
+    }
 
-      const line = 'Welcome to the Web AR demo. I am standing on your table. Move your phone closer, farther away, or around me. The screen next to me can play any video you choose.';
+    function mountARScene() {
+      arRoot.innerHTML = `
+        <a-scene
+          embedded
+          vr-mode-ui="enabled: false"
+          device-orientation-permission-ui="enabled: false"
+          renderer="antialias: true; alpha: true; precision: medium"
+          arjs="sourceType: webcam; videoTexture: true; debugUIEnabled: false; trackingMethod: best;"
+        >
+          <a-marker id="hiroMarker" preset="hiro" emitevents="true" smooth="true" smooth-count="5" smooth-tolerance="0.01" smooth-threshold="2">
+            <a-entity position="0 0 0">
+              <a-cylinder position="-0.25 0.025 0" radius="0.29" height="0.035" material="color:#000; opacity:.28; transparent:true"></a-cylinder>
+              <a-entity id="character" position="-0.25 0.05 0" scale="0.72 0.72 0.72">
+                <a-cylinder position="0 0.48 0" radius="0.18" height="0.62" material="color:#0d8cff"></a-cylinder>
+                <a-sphere position="0 0.93 0" radius="0.225" material="color:#ffd4b8"></a-sphere>
+                <a-sphere position="-0.075 0.975 0.205" radius="0.025" material="color:#121820"></a-sphere>
+                <a-sphere position="0.075 0.975 0.205" radius="0.025" material="color:#121820"></a-sphere>
+                <a-box id="mouth" position="0 0.89 0.218" width="0.085" height="0.018" depth="0.012" material="color:#5c2432"></a-box>
+                <a-cylinder position="-0.23 0.48 0" radius="0.045" height="0.52" rotation="0 0 -12" material="color:#ffd4b8"></a-cylinder>
+                <a-entity id="rightArm" position="0.20 0.68 0" rotation="0 0 -34"><a-cylinder position="0 -0.20 0" radius="0.045" height="0.48" material="color:#ffd4b8"></a-cylinder></a-entity>
+                <a-cylinder position="-0.09 0.08 0" radius="0.055" height="0.34" material="color:#18202a"></a-cylinder>
+                <a-cylinder position="0.09 0.08 0" radius="0.055" height="0.34" material="color:#18202a"></a-cylinder>
+              </a-entity>
+              <a-entity position="0.46 0.62 -0.02" rotation="-8 -8 0" scale="0.58 0.58 0.58">
+                <a-box width="1.12" height="0.69" depth="0.045" material="color:#101820"></a-box>
+                <a-plane position="0 0 0.026" width="1.02" height="0.574" material="color:#24b6ff; shader:flat"></a-plane>
+              </a-entity>
+            </a-entity>
+          </a-marker>
+          <a-entity camera></a-entity>
+        </a-scene>`;
+      bindMarkerEvents();
+    }
+
+    window.addEventListener('camera-init', () => {
+      statusEl.textContent = 'Camera ready - point at the Hiro marker';
+    });
+
+    window.addEventListener('camera-error', (event) => {
+      console.error('AR camera error', event.detail || event);
+      showError('Camera could not stay open. Please open this link directly in Safari or Chrome and allow camera access.');
+    });
+
+    enterBtn.addEventListener('click', () => {
+      enterBtn.disabled = true;
+      errorBox.style.display = 'none';
+      intro.style.display = 'none';
+      hud.style.display = 'block';
+      statusEl.textContent = 'Starting camera...';
+      if (!arRoot.querySelector('a-scene')) mountARScene();
+    });
+
+    playDemo.addEventListener('click', () => {
+      if (!markerVisible) return;
+      const line = 'Welcome to the Web AR demo. I am standing on your table. Move your phone closer, farther away, or around me.';
+      playDemo.disabled = true;
+      startTalkingAnimation();
       if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(line);
-        utterance.rate = 0.94;
-        utterance.pitch = 1.02;
-        utterance.onstart = startTalkingAnimation;
-        utterance.onend = () => {
-          stopTalkingAnimation();
-          playDemo.disabled = false;
-          playDemo.textContent = 'Play demo again';
-        };
-        utterance.onerror = () => {
-          stopTalkingAnimation();
-          playDemo.disabled = false;
-          playDemo.textContent = 'Play demo again';
-        };
-        window.speechSynthesis.speak(utterance);
+        speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(line);
+        u.rate = .94;
+        u.onend = () => { stopTalkingAnimation(); playDemo.disabled = false; };
+        u.onerror = () => { stopTalkingAnimation(); playDemo.disabled = false; };
+        speechSynthesis.speak(u);
       } else {
-        startTalkingAnimation();
-        setTimeout(() => {
-          stopTalkingAnimation();
-          playDemo.disabled = false;
-          playDemo.textContent = 'Play demo again';
-        }, 9000);
+        setTimeout(() => { stopTalkingAnimation(); playDemo.disabled = false; }, 7000);
       }
     });
   </script>
