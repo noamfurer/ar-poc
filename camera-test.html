@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+  <meta name="theme-color" content="#000000">
+  <title>Camera Test</title>
+  <style>
+    html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000;font-family:Arial,Helvetica,sans-serif}
+    #video{position:fixed;inset:0;width:100vw;height:100dvh;object-fit:cover;background:#000}
+    #overlay{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;justify-content:space-between;padding:max(14px,env(safe-area-inset-top)) 14px max(18px,env(safe-area-inset-bottom));box-sizing:border-box;pointer-events:none}
+    #status{align-self:center;background:rgba(0,0,0,.72);color:#fff;padding:10px 14px;border-radius:999px;font-weight:700;font-size:14px;text-align:center;backdrop-filter:blur(8px)}
+    #panel{pointer-events:auto;background:rgba(0,0,0,.72);border:1px solid rgba(255,255,255,.16);border-radius:18px;padding:14px;backdrop-filter:blur(10px)}
+    button{width:100%;border:0;border-radius:14px;padding:14px 16px;font-size:16px;font-weight:700;background:#fff;color:#000}
+    #debug{margin-top:10px;color:#ddd;font-size:12px;line-height:1.45;word-break:break-word}
+  </style>
+</head>
+<body>
+  <video id="video" autoplay muted playsinline webkit-playsinline></video>
+  <div id="overlay">
+    <div id="status">Camera not started</div>
+    <div id="panel">
+      <button id="start">Start camera</button>
+      <div id="debug"></div>
+    </div>
+  </div>
+  <script>
+    const video = document.getElementById('video');
+    const status = document.getElementById('status');
+    const debug = document.getElementById('debug');
+    const start = document.getElementById('start');
+    let stream = null;
+
+    function log(msg){
+      debug.textContent = msg;
+    }
+
+    async function startCamera(){
+      try{
+        if(stream){
+          stream.getTracks().forEach(t=>t.stop());
+          stream=null;
+        }
+        status.textContent='Requesting camera...';
+        log('UA: '+navigator.userAgent);
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio:false,
+          video:{
+            facingMode:{ideal:'environment'},
+            width:{ideal:1920},
+            height:{ideal:1080}
+          }
+        });
+        video.srcObject = stream;
+        await video.play();
+
+        const track = stream.getVideoTracks()[0];
+        const settings = track.getSettings ? track.getSettings() : {};
+        status.textContent='Camera is running';
+        log('Track: '+track.readyState+' | '+JSON.stringify(settings));
+
+        track.addEventListener('ended',()=>{
+          status.textContent='Camera track ended';
+          log('The browser ended the camera track.');
+        });
+        track.addEventListener('mute',()=>{
+          status.textContent='Camera track muted';
+          log('The browser muted the camera track.');
+        });
+        track.addEventListener('unmute',()=>{
+          status.textContent='Camera is running';
+          log('Camera track resumed.');
+        });
+
+        setInterval(()=>{
+          if(!stream) return;
+          const t=stream.getVideoTracks()[0];
+          if(t){
+            status.textContent = t.readyState==='live'
+              ? 'Camera is running'
+              : 'Camera track: '+t.readyState;
+          }
+        },1000);
+      }catch(err){
+        status.textContent='Camera error';
+        log((err && err.name ? err.name+': ' : '') + (err && err.message ? err.message : String(err)));
+      }
+    }
+
+    start.addEventListener('click',startCamera);
+    document.addEventListener('visibilitychange',()=>{
+      if(document.visibilityState==='visible' && stream){
+        const t=stream.getVideoTracks()[0];
+        log('Returned to page. Track: '+(t ? t.readyState : 'missing'));
+      }
+    });
+  </script>
+</body>
+</html>
