@@ -24,8 +24,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Generate red mascot GLB
-        run: python generate_mascot.py
+      - name: Rebuild mascot GLB
+        shell: bash
+        run: |
+          mkdir -p assets
+          cat payload/v3/model/part*.b64 | tr -d '\n\r ' | base64 -d | xz -d > assets/robot_builder_mascot_v3.glb
+          echo "0342ba5e897b0bee10f178c9a36d7210c0a240282d3ac9aa3c2537c14a2965c3  assets/robot_builder_mascot_v3.glb" | sha256sum -c -
+          rm -rf payload
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
