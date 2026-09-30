@@ -1,29 +1,21 @@
-# Free WebAR POC
+# מר יסודות - WebAR
 
-A zero-backend marker-based AR demo using A-Frame + AR.js.
+Open https://noamfurer.github.io/ar-poc/ on a phone and tap the camera button.
+Print marker.html, lay the logo flat on the table, and aim from above at a slight angle.
+Keep the entire logo visible at roughly half the screen width for initial recognition.
 
-## What it does
-- Opens the phone camera in a web page.
-- Tracks the standard Hiro marker.
-- Anchors a simple 3D character and a floating video screen to the marker.
-- Lets the user physically move closer, farther away, and around the marker.
-- Plays a short browser-generated voice line and animates the character mouth/arm.
-- Plays a local MP4 on the floating screen.
+The exact uploaded logo is compiled in assets/logo_target.mind. The supplied GLB
+is reconstructed by the Pages workflow, with its SHA-256 verified.
+Its embedded sign image is preserved byte for byte. mascot.js fixes the sign's
+inward winding/UV display at runtime and groups the supplied meshes into pivots
+for a wave, head motion, stepping and sign movement.
 
-## Test
-The site must be served over HTTPS for camera access on a phone.
+The model is Z-up. MindAR's XY plane becomes the tabletop; positive Z points
+out of the printed surface. A depth-only plane hides the model below the table
+during entrance. The lowest sole is aligned to that plane. Reacquisition restarts
+the entrance. preview.html displays the same model and motion without a camera.
 
-1. Deploy this folder to Vercel, Netlify, GitHub Pages, or another HTTPS host.
-2. Open `/marker.html` on another device or print it.
-3. Open the main site on the phone and allow camera access.
-4. Point the phone at the marker.
-5. When the character appears, tap `Play demo`.
-
-## Replace with a real character
-Replace the primitive character inside `#character` with a local `.glb` file and load it with A-Frame `gltf-model`. If the GLB contains animations, add `aframe-extras` and use `animation-mixer`.
-
-## Replace the video
-Overwrite `assets/demo.mp4` with your own MP4. Keep it reasonably compressed for fast mobile loading.
-
-## Production upgrade
-For a branded marker instead of Hiro, move to a custom AR.js pattern marker or MindAR image tracking. For markerless surface placement, use WebXR hit-test on supported browsers with an iOS fallback.
+Runtime libraries are hosted locally: A-Frame 1.5.0 and MindAR 1.2.5.
+Validation: browser model/camera startup, zero page errors, animation transforms,
+unchanged GLB SHA-256, and synthetic target matching. Physical phone tracking
+still depends on lighting, print quality, camera angle and distance.

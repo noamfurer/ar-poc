@@ -1,224 +1,77 @@
 <!doctype html>
 <html lang="he" dir="rtl">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-  <meta name="theme-color" content="#000000">
-  <title>WebAR - היצור האדום</title>
-
-  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/dist/mindar-image.prod.js"></script>
-  <script src="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/dist/mindar-image-aframe.prod.js"></script>
-
-  <style>
-    html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000;font-family:Arial,Helvetica,sans-serif}
-    #stage{position:fixed;inset:0;width:100vw;height:100dvh;overflow:hidden;background:#000}
-    #status{
-      position:fixed;z-index:99999;top:max(12px,env(safe-area-inset-top));left:12px;right:12px;
-      padding:12px 14px;border-radius:14px;background:rgba(0,0,0,.72);color:#fff;text-align:center;
-      font-weight:700;font-size:14px;backdrop-filter:blur(8px);pointer-events:none
-    }
-    #status.found{background:rgba(178,0,28,.90)}
-    #hint{
-      position:fixed;z-index:99999;bottom:max(12px,env(safe-area-inset-bottom));left:12px;right:12px;
-      padding:10px 12px;border-radius:12px;background:rgba(0,0,0,.62);color:#fff;text-align:center;
-      font-size:12px;line-height:1.4;pointer-events:none
-    }
-    #stage a-scene,#stage canvas,#stage .a-canvas,#stage video,video.mindar-video{
-      position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important
-    }
-    #stage video,video.mindar-video{object-fit:cover!important}
-    .a-enter-vr,.a-orientation-modal{display:none!important}
-  </style>
-
-  <script>
-    AFRAME.registerComponent('target-status', {
-      init: function () {
-        const status = document.getElementById('status');
-        this.el.addEventListener('targetFound', () => {
-          status.textContent = 'הלוגו זוהה - הדמות יוצאת מהשולחן';
-          status.classList.add('found');
-        });
-        this.el.addEventListener('targetLost', () => {
-          status.textContent = 'המצלמה פעילה - כוון ללוגו האדום';
-          status.classList.remove('found');
-        });
-      }
-    });
-
-    AFRAME.registerComponent('emerge-and-dance', {
-      init: function () {
-        this.ready = false;
-        this.targetVisible = false;
-        this.rising = false;
-        const target = this.el.parentEl;
-
-        const reset = () => {
-          this.el.removeAttribute('animation__rise');
-          this.el.removeAttribute('animation__grow');
-          this.el.removeAttribute('animation__dancez');
-          this.el.removeAttribute('animation__dancelean');
-          this.el.setAttribute('position','0 0 -0.62');
-          this.el.setAttribute('rotation','0 0 0');
-          this.el.setAttribute('scale','0.24 0.24 0.24');
-          this.el.object3D.visible = false;
-          this.rising = false;
-        };
-        this.reset = reset;
-
-        this.el.addEventListener('model-loaded', () => {
-          this.ready = true;
-          reset();
-          if (this.targetVisible) this.start();
-        });
-
-        target.addEventListener('targetFound', () => {
-          this.targetVisible = true;
-          if (this.ready) this.start();
-        });
-
-        target.addEventListener('targetLost', () => {
-          this.targetVisible = false;
-          reset();
-        });
-
-        this.el.addEventListener('animationcomplete__rise', () => {
-          if (!this.targetVisible) return;
-          this.rising = false;
-          this.el.setAttribute('animation__dancez',{
-            property:'position',
-            from:'0 0 0.145',
-            to:'0 0 0.205',
-            dur:430,
-            dir:'alternate',
-            loop:true,
-            easing:'easeInOutSine'
-          });
-          this.el.setAttribute('animation__dancelean',{
-            property:'rotation',
-            from:'-4 3 -7',
-            to:'4 -3 7',
-            dur:430,
-            dir:'alternate',
-            loop:true,
-            easing:'easeInOutSine'
-          });
-          document.getElementById('status').textContent='הדמות בחוץ - ורוקדת!';
-        });
-      },
-
-      start: function () {
-        if (this.rising) return;
-        this.reset();
-        this.rising = true;
-        this.el.object3D.visible = true;
-        this.el.setAttribute('animation__rise',{
-          property:'position',
-          from:'0 0 -0.62',
-          to:'0 0 0.145',
-          dur:1650,
-          easing:'easeOutBack'
-        });
-        this.el.setAttribute('animation__grow',{
-          property:'scale',
-          from:'0.21 0.21 0.21',
-          to:'0.24 0.24 0.24',
-          dur:1400,
-          easing:'easeOutCubic'
-        });
-      }
-    });
-  </script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#15151c">
+<title>מר יסודות - AR</title>
+<script src="./vendor/aframe.min.js"></script>
+<script src="./vendor/mindar-image-aframe.prod.js"></script>
+<script src="./mascot.js?v=30"></script>
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#15151c;font-family:Arial,Helvetica,sans-serif;color:#fff}
+#stage{position:absolute;inset:0;overflow:hidden;isolation:isolate}#stage a-scene{width:100%;height:100%}
+#status{position:fixed;z-index:20;top:max(14px,env(safe-area-inset-top));left:16px;right:16px;padding:12px;border-radius:14px;background:#15151cd9;text-align:center;font-size:14px;pointer-events:none}
+#status.found{background:#bd1734e8}
+#hint{position:fixed;z-index:20;bottom:max(18px,env(safe-area-inset-bottom));left:20px;right:20px;text-align:center;font-size:13px;line-height:1.6;background:#15151cc9;padding:10px;border-radius:12px;pointer-events:none}
+#intro{position:fixed;inset:0;z-index:30;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:28px;text-align:center;background:#faf7f3;color:#25252d}
+#intro[hidden]{display:none}#intro img{width:130px;border-radius:24px}h1{margin:24px 0 10px;font-size:30px}p{max-width:330px;line-height:1.7;margin:6px 0 22px}
+button{font:700 18px Arial;color:white;background:#ca1e3b;border:0;border-radius:16px;padding:16px 35px;cursor:pointer}button:disabled{opacity:.6}a{color:#a31930;margin-top:22px;font-size:14px}.a-enter-vr{display:none}
+</style>
 </head>
 <body>
-  <div id="stage"></div>
-  <div id="status">מכין את הלוגו לזיהוי...</div>
-  <div id="hint">הלוגו צריך להיות מונח שטוח על השולחן ובמלואו בתוך הפריים.</div>
-
-  <script>
-    const stage = document.getElementById('stage');
-    const status = document.getElementById('status');
-
-    function loadImage(src){
-      return new Promise((resolve,reject)=>{
-        const img=new Image();
-        img.onload=()=>resolve(img);
-        img.onerror=reject;
-        img.src=src;
+<div id="stage"></div>
+<div id="status">טוען את הדמות...</div>
+<div id="hint">הנח את הלוגו שטוח על השולחן. כוון מלמעלה בזווית קלה, כשהלוגו תופס כחצי מרוחב המסך.</div>
+<div id="intro"><img src="./assets/logo_target.png" alt="הלוגו האדום"><h1>מר יסודות קופץ לביקור</h1><p>מניחים את הלוגו על השולחן, פותחים מצלמה ונותנים לו להתעורר.</p><button id="start">פתיחת מצלמה</button><a href="./marker.html">הלוגו להדפסה</a></div>
+<script>
+const statusEl = document.getElementById('status');
+const start = document.getElementById('start');
+let scene;
+start.addEventListener('click', async () => {
+  start.disabled = true;
+  start.textContent = 'מפעיל מצלמה...';
+  try {
+    if (!window.AFRAME || !AFRAME.systems['mindar-image-system']) throw new Error('ספריית ה-AR לא נטענה. בדוק חיבור ורענן.');
+    if (!scene) {
+      document.getElementById('stage').innerHTML = `
+      <a-scene embedded mindar-image="imageTargetSrc: ./assets/logo_target.mind?v=30; autoStart: false; uiLoading: no; uiScanning: no; uiError: no; warmupTolerance: 4; missTolerance: 8;" renderer="alpha: true; colorManagement: true;" vr-mode-ui="enabled: false" device-orientation-permission-ui="enabled: false">
+        <a-assets timeout="30000"><a-asset-item id="robotModel" src="./assets/robot_builder_mascot_v3.glb?v=30"></a-asset-item></a-assets>
+        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+        <a-entity light="type: ambient; intensity: 1.1"></a-entity>
+        <a-entity light="type: directional; intensity: 1.5" position="1 2 3"></a-entity>
+        <a-entity id="logoTarget" mindar-image-target="targetIndex: 0">
+          <a-entity table-occluder></a-entity>
+          <a-entity id="robot" gltf-model="#robotModel" mascot-performance></a-entity>
+        </a-entity>
+      </a-scene>`;
+      scene = document.querySelector('a-scene');
+      scene.addEventListener('arReady', () => { statusEl.textContent = 'המצלמה פעילה - כוון ללוגו האדום'; });
+      scene.addEventListener('arError', () => { statusEl.textContent = 'לא ניתן להפעיל מצלמה. בדוק הרשאה ופתח ב-Chrome או ב-Safari.'; });
+      document.getElementById('logoTarget').addEventListener('targetFound', () => {
+        statusEl.textContent = 'הלוגו זוהה - מר יסודות כאן!'; statusEl.classList.add('found');
       });
-    }
-
-    function forceFullscreenLayers(){
-      document.querySelectorAll('video').forEach(v=>{
-        v.style.position='fixed'; v.style.inset='0';
-        v.style.width='100vw'; v.style.height='100dvh'; v.style.objectFit='cover';
+      document.getElementById('logoTarget').addEventListener('targetLost', () => {
+        statusEl.textContent = 'כוון שוב ללוגו כדי להחזיר את מר יסודות'; statusEl.classList.remove('found');
       });
-      document.querySelectorAll('canvas').forEach(c=>{
-        c.style.position='fixed'; c.style.inset='0';
-        c.style.width='100vw'; c.style.height='100dvh';
-      });
+      if (!scene.hasLoaded) await new Promise(resolve => scene.addEventListener('loaded', resolve, {once:true}));
     }
-
-    async function boot(){
-      try{
-        const img = await loadImage('./assets/logo_target.svg?v=1');
-        const compiler = new window.MINDAR.IMAGE.Compiler();
-
-        status.textContent='מכין את הלוגו לזיהוי: 0%';
-        await compiler.compileImageTargets([img], p=>{
-          status.textContent='מכין את הלוגו לזיהוי: '+Math.round(p)+'%';
-        });
-
-        const exported = await compiler.exportData();
-        const mindUrl = URL.createObjectURL(new Blob([exported],{type:'application/octet-stream'}));
-
-        stage.innerHTML = `
-          <a-scene
-            mindar-image="imageTargetSrc: ${mindUrl}; uiLoading: yes; uiScanning: yes; uiError: yes;"
-            embedded
-            color-space="sRGB"
-            renderer="colorManagement: true; physicallyCorrectLights: true; alpha: true;"
-            vr-mode-ui="enabled: false"
-            device-orientation-permission-ui="enabled: false"
-          >
-            <a-assets timeout="30000">
-              <a-asset-item id="robotModel" src="./assets/robot_builder_mascot_v3.glb?v=1"></a-asset-item>
-            </a-assets>
-
-            <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-
-            <a-entity mindar-image-target="targetIndex: 0" target-status>
-              <a-entity
-                id="robot"
-                gltf-model="#robotModel"
-                position="0 0 -0.62"
-                rotation="0 0 0"
-                scale="0.24 0.24 0.24"
-                emerge-and-dance
-              ></a-entity>
-            </a-entity>
-          </a-scene>
-        `;
-
-        const scene = stage.querySelector('a-scene');
-        scene.addEventListener('arReady', ()=>{
-          status.textContent='המצלמה פעילה - כוון ללוגו האדום';
-          forceFullscreenLayers();
-        });
-        scene.addEventListener('arError', ()=>{
-          status.textContent='שגיאת AR - רענן את הדף ונסה שוב';
-        });
-
-        setInterval(forceFullscreenLayers,500);
-        window.addEventListener('resize',forceFullscreenLayers);
-
-      }catch(err){
-        console.error(err);
-        status.textContent='שגיאה בהכנת הלוגו לזיהוי';
-      }
-    }
-
-    boot();
-  </script>
+    document.getElementById('intro').hidden = true;
+    statusEl.textContent = 'מפעיל מצלמה...';
+    await new Promise((resolve, reject) => {
+      const ready = () => { cleanup(); resolve(); };
+      const failed = () => { cleanup(); reject(new Error('לא ניתן להפעיל מצלמה. אשר גישה למצלמה ונסה שוב.')); };
+      const cleanup = () => { scene.removeEventListener('arReady', ready); scene.removeEventListener('arError', failed); };
+      scene.addEventListener('arReady', ready, {once:true});
+      scene.addEventListener('arError', failed, {once:true});
+      scene.systems['mindar-image-system'].start();
+    });
+  } catch(error) {
+    console.error(error);
+    document.getElementById('intro').hidden = false;
+    document.querySelector('#intro p').textContent = error.message || 'בדוק הרשאת מצלמה ונסה שוב.';
+  } finally { start.disabled = false; start.textContent = 'פתיחת מצלמה'; }
+});
+</script>
 </body>
 </html>
