@@ -19,3 +19,13 @@ Runtime libraries are hosted locally: A-Frame 1.5.0 and MindAR 1.2.5.
 Validation: browser model/camera startup, zero page errors, animation transforms,
 unchanged GLB SHA-256, and synthetic target matching. Physical phone tracking
 still depends on lighting, print quality, camera angle and distance.
+
+## Recorded speech
+
+The camera button unlocks Web Audio and loads the supplied 14-second recording.
+Speech begins five seconds after the 1.35-second emergence finishes. A 50 Hz
+amplitude envelope from the same decoded recording drives the upper/lower lips
+using the audio clock. No subtitles or generated speech are used. Losing the logo
+or hiding the tab pauses speech; reacquisition restarts the entrance and wait,
+then resumes the same recording position. A completed recording does not replay
+on tracking flicker. The preview has an explicit sound-start button as well.
